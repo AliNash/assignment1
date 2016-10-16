@@ -128,7 +128,7 @@ history_t* history;
 // worry about deallocating memory. You need to ensure memory is allocated and deallocated
 // properly so that your shell works without leaking memory.
 //
-int getcmd(char *prompt, char *args[], int *background, int *historyflag, int *outputflag, int *pipingflag, char* line1)
+int getcmd(char *prompt, char *args[], int *bg, int *historyflag, int *outputflag, int *pipingflag, char* line1)
 {
 	 int length, i = 0;
 	 char *token, *loc;
@@ -144,7 +144,8 @@ int getcmd(char *prompt, char *args[], int *background, int *historyflag, int *o
  // Check if background is specified..
 	 if ((loc = index(line, '&')) != NULL)
 	 {
-	   *background = 1;
+	   *bg = 1;
+	    printf(" Background value is set to 1 \n" );
 	   *loc = ' ';
 	 }
 	 if ((loc = index(line, '!')) != NULL)
@@ -160,7 +161,9 @@ int getcmd(char *prompt, char *args[], int *background, int *historyflag, int *o
 	   *pipingflag = 1;
 	 }
 	 else
-	 *background = 0;
+	 {
+	 	*bg = 0;
+	 }
 	 while ((token = strsep(&line, " \t\n")) != NULL) {
 	   for (int j = 0; j < strlen(token); j++)
 	     if (token[j] <= 32)
@@ -214,6 +217,7 @@ int main(void)
 	   int cnt = getcmd("\n>> ", args, &bg, &hisflag, &outputflag, &pipingflag, l);
 	   // add method here that copies commands to history array
 	   args[cnt] = NULL;
+	   printf("%d\n", bg);
 
 	   // Storing commands in history buffer
 	   for (int i = 0; i < cnt; i++)
@@ -240,6 +244,11 @@ int main(void)
 
 	   if (pid == 0)
 	   {
+	   	if (bg)
+	       {
+	           printf("\n Background enabled \n\n");
+	           // add to background list
+	       }
 	   	int i = 0;
 	   	if (outputflag)
         {
@@ -271,15 +280,7 @@ int main(void)
 	   	 if (hisflag)
         {
        	 printf("history command");
-        }
-        
-        
-
-       if (bg)
-       {
-           // printf("\n Background enabled \n\n");
-           // add to background list
-       }
+        } 
        // the parent process waits until the child finishes
        else
        {
