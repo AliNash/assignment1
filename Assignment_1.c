@@ -30,11 +30,9 @@
 	         	if ( history->buffer[i][j] != NULL)
 	         	{
 	        	   printf("buffer[%d][%d] is: %s\n",i, j , history->buffer[i][j]);
-
 	         	}
 	         }
 		}
-
 		char* commandList = (char*) malloc(100 *sizeof(char));
 		//concatenate(testArray, 0 ,commandList);
 		for (int i = 0; i < 9; i++)
@@ -62,23 +60,26 @@ history_t* history;
 		int i = 0;
 		while (array[i] != NULL && array[i+1]!= NULL)
 		{
-			printf("Elements of array %s\n", array[i] );
+			//printf("Elements of array %s\n", array[i] );
 			strcat(com, array[i]);
 			i++;
 		}
-		
+    return com;
+
 		// for (int i = 0; i < 4; i++)
 		// {
 		// 	strcat(commandList, array[i]);
 		// }
-					
+
 	}
 
 	void printCommand (history_t* history)
 	{
-		char* commandList = (char*) malloc(1000 *sizeof(char));
-		printf("Concatenated Array is %s \n",concatenate(history->buffer[0], commandList));
-
+    for (int i = (history->currentcmd - (history->currentcmd%10)); i < history->currentcmd; i++)
+    {
+      char* commandList = (char*) malloc(1000 *sizeof(char));
+      printf("Command %d is %s \n",i+1, concatenate(history->buffer[i%10], commandList));
+    }
 	}
 	//
 // This code is given for illustration purposes. You need not include or follow this
@@ -139,6 +140,7 @@ int main(void)
 	 int bg;
 	 char* wordir;
 	 char* l;
+   int status;
 	 history_t* history = (history_t*) malloc(sizeof(history_t));
 	 history->currentcmd = 0;
 	 pid_t pids[1000];
@@ -151,15 +153,10 @@ int main(void)
 
 	   for (int i = 0; i < cnt; i++)
 	   {
-	     history->buffer[history->currentcmd][i*2] =  args[i];
-	     history->buffer[history->currentcmd][i*2+1] = " ";
-	     printf("history->buffer[history->currentcmd][%d] is %s \n",i*2,  history->buffer[history->currentcmd][i*2]);
-	     printf("history->buffer[history->currentcmd][%d] is %s \n",i*2 +1,  history->buffer[history->currentcmd][i*2 +1]);
-
+	     history->buffer[(history->currentcmd%10)][i*2] =  args[i];
+	     history->buffer[(history->currentcmd%10)][i*2+1] = " ";
 	   }
 	   history->currentcmd = history->currentcmd + 1;
-	   //printCommand(history);
-	   //printf("currentcmd is %d\n", history->currentcmd );
 
 
 	   pid_t pid = fork();
@@ -172,21 +169,33 @@ int main(void)
 	   }
 	   else
 	   {
-	    if(strcmp("jobs",args[0])==0){
-	        int i;
-	        int counter = 0;
-	        int *status;
-	        status = malloc(1000);
-	        for(i=0;pids[i]!=0;i++){
-	            pid_t r = waitpid(pids[i],status,1);
-	            if(r!=-1){
-	                printf("%d,\n",r);
-	                counter++;
-	            }
-	        }
-	        //enterExec = 0;
+       if (bg)
+       {
+           printf("\n Background enabled \n\n");
+           // add to background list
+       }
 
-	    }
+       // the parent process waits until the child finishes
+       else
+       {
+           printf("\n Background not enabled \n\n");
+           waitpid(pid,&status,0);
+      }
+	    // if(strcmp("jobs",args[0])==0){
+	    //     int i;
+	    //     int counter = 0;
+	    //     int *status;
+	    //     status = malloc(1000);
+	    //     for(i=0;pids[i]!=0;i++){
+	    //         pid_t r = waitpid(pids[i],status,1);
+	    //         if(r!=-1){
+	    //             printf("%d,\n",r);
+	    //             counter++;
+	    //         }
+	    //     }
+	    //     //enterExec = 0;
+      //
+	    // }
 	   	 if (strcmp(args[0],"exit")==0)
 	     {
 	         exit(0);
