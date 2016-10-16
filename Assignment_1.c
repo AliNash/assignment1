@@ -15,33 +15,6 @@
 #define HISTORY_SIZE 10
 #define ARGS_ARRAY_SIZE 20
 
-
-	/*
-	for (int i = 0; i < HISTORY_SIZE; i++)
-		{
-	         for (int j = 0; j < ARGS_ARRAY_SIZE; j++)
-	         {
-	         	if (history->buffer[i][j+1] != NULL)
-	         	{
-	         		printf ("String 1 is %s \n", history->buffer[i][j]);
-	         		printf ("String 2 is %s \n", history->buffer[i][j+1]);
-	         		//printf ("Concatenated String: %s \n", strcat(history->buffer[i][j], history->buffer[i][j+1]));
-	       			//commandList[i] = strcat(history->buffer[i][j], history->buffer[i][j+1]);
-	         	}
-	         	if ( history->buffer[i][j] != NULL)
-	         	{
-	        	   printf("buffer[%d][%d] is: %s\n",i, j , history->buffer[i][j]);
-	         	}
-	         }
-		}
-		char* commandList = (char*) malloc(100 *sizeof(char));
-		//concatenate(testArray, 0 ,commandList);
-		for (int i = 0; i < 9; i++)
-		{
-	         printf("Command %d is %s \n ", i, concatenate(history->buffer[i],0,commandList));
-		}
-		*/
-
 typedef struct
 {
   char* buffer[10][20];
@@ -60,6 +33,7 @@ typedef struct
 	void add_spaces(char *dest, int num_of_spaces);
 	void redirect (char* file);
 	void piping (char* piping_args[]);
+	char* retrieveCommand (history_t* history, int i);
 
 
 history_t* history;
@@ -76,6 +50,12 @@ jobList* jobs;
 			i++;
 		}
     return com;
+	}
+
+	char* retrieveCommand (history_t* history, int i)
+	{
+	      char* historyCommand = (char*) malloc(1000 *sizeof(char));
+	      return concatenate(history->buffer[(i-1)%10], historyCommand);
 	}
 
 	void printHistory (history_t* history)
@@ -125,30 +105,6 @@ jobList* jobs;
 		}
 	}
 
-	// void updateBuffer (struct history_t history, int cnt, char* args)
-	// {
-	// 	for (int i = 0; i < cnt; i++)
-	//    {
-	//      history->buffer[(history->currentcmd%10)][i*2] =  args[i];
-	//      history->buffer[(history->currentcmd%10)][i*2+1] = " ";
-	//    }
-	//    history->currentcmd = history->currentcmd + 1;
-	// }
-
-
-/*
-	void getArguments (args[])
-	{
-		while (args[i] != "|")
-	}
-*/
-	//
-
-// This code is given for illustration purposes. You need not include or follow this
-// strictly. Feel free to writer better or bug free code. This example code block does not
-// worry about deallocating memory. You need to ensure memory is allocated and deallocated
-// properly so that your shell works without leaking memory.
-//
 int getcmd(char *prompt, char *args[], int *bg, int *historyflag, int *outputflag, int *pipingflag, char* line1)
 {
 	 int length, i = 0;
@@ -172,6 +128,7 @@ int getcmd(char *prompt, char *args[], int *bg, int *historyflag, int *outputfla
 	 if ((loc = index(line, '!')) != NULL)
 	 {
 	   *historyflag = 1;
+	   *loc = ' ';
 	 }
 	 if ((loc = index(line, '>')) != NULL)
 	 {
@@ -181,10 +138,6 @@ int getcmd(char *prompt, char *args[], int *bg, int *historyflag, int *outputfla
 	 {
 	   *pipingflag = 1;
 	 }
-	 // else
-	 // {
-	 // 	*bg = 0;
-	 // }
 	 while ((token = strsep(&line, " \t\n")) != NULL) {
 	   for (int j = 0; j < strlen(token); j++)
 	     if (token[j] <= 32)
@@ -199,16 +152,6 @@ int getcmd(char *prompt, char *args[], int *bg, int *historyflag, int *outputfla
 int main(void)
 {
 	 char *args[20];
-	 
-	 // Defining file descriptors and other variables to implement piping
-	 // int fd[2]; 
-	 // int nbytes; // stores the number of bytes read
-  //    pid_t childpid;
-  //    char string[] = "String from parent to child\n";
-  //    char readbuffer[80];
-
-  //    pipe(fd);
-
 
 	 // Flags to detect the opeartors
 	 int bg;
@@ -266,24 +209,14 @@ int main(void)
            // add to background list
        }
 
-	   // if (outputflag)
-    //     {
-	   //  	int i = 0;
-	   //  	printf("Detected outputflag\n");
-	   //  	old_stdout = dup(1);
-			 //  while (strcmp(args[i], ">") != 0)
-			 //  {
-			 //  	i++;
-			 //  }
-			 //  redirect(args[i+1]);
-			 //  args[i] = NULL;
-    // 	}
-
 	   pid_t pid = fork();
 
 	   if (pid == 0)
 	   {
-
+	   	if (hisflag)
+	   	{
+	   		execvp(retrieveCommand (history, atoi(args[0])),args);
+	   	}
 	   	int i = 0;
 	   	if (outputflag)
         {
@@ -312,39 +245,24 @@ int main(void)
 	   else
 	   {
 	   	 // parent
-	   	 if (hisflag)
+	   	if (bg)
         {
-       	 printf("history command");
+       	 //printf("history command");
         } 
        // the parent process waits until the child finishes
-       else
-       {
+        else
+        {
            // printf("\n Background not enabled \n\n");
            waitpid(pid,&status,0);
-      }
-	    // if(strcmp("jobs",args[0])==0){
-	    //     int i;
-	    //     int counter = 0;
-	    //     int *status;
-	    //     status = malloc(1000);
-	    //     for(i=0;pids[i]!=0;i++){
-	    //         pid_t r = waitpid(pids[i],status,1);
-	    //         if(r!=-1){
-	    //             printf("%d,\n",r);
-	    //             counter++;
-	    //         }
-	    //     }
-	    //     //enterExec = 0;
-      //
-	    // }
+        }
 	   	 if (strcmp(args[0],"exit")==0)
 	     {
 	         exit(0);
 	     }
-	     if (strcmp(args[0],"pwd")==0)
-	     {
-	         printf("%s\n", getcwd(wordir,150));
-	     }
+	     // if (strcmp(args[0],"pwd")==0)
+	     // {
+	     //     printf("%s\n", getcwd(wordir,150));
+	     // }
 	     if (strcmp(args[0],"cd")==0)
 	     {
 	         chdir(args[1]);
@@ -362,10 +280,5 @@ int main(void)
 	     }
 	     // parent
 	   }
-	   /* the steps can be..:
-	  (1) fork a child process using fork()
-	  (2) the child process will invoke execvp()
-	  (3) if background is not specified, the parent will wait,
-	  otherwise parent starts the next command... */
 	 }
 }
