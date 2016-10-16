@@ -1,0 +1,31 @@
+
+ Background not enabled 
+
+Message from A 
+Assignment_1
+Assignment_1.c
+helloExec
+helloExec.c
+out.txt
+
+>> 
+ Background not enabled 
+Message from A 
+
+Assignment_1
+Assignment_1.c
+helloExec
+helloExec.c
+out.txt
+
+>> 
+ Background not enabled 
+
+Message from A 
+Assignment_1
+Assignment_1.c
+helloExec
+helloExec.c
+out.txt
+
+>> 

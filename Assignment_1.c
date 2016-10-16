@@ -52,6 +52,8 @@ typedef struct
 	void printCommand (history_t* history);
 	char* concatenate (char* array[], char* commandList);
 	void add_spaces(char *dest, int num_of_spaces);
+	void redirect (char* file);
+
 
 history_t* history;
 
@@ -76,11 +78,18 @@ history_t* history;
 
 	void printCommand (history_t* history)
 	{
-    for (int i = (history->currentcmd - (history->currentcmd%10)); i < history->currentcmd; i++)
-    {
-      char* commandList = (char*) malloc(1000 *sizeof(char));
-      printf("Command %d is %s \n",i+1, concatenate(history->buffer[i%10], commandList));
-    }
+	    for (int i = (history->currentcmd - (history->currentcmd%10)); i < history->currentcmd; i++)
+	    {
+	      char* commandList = (char*) malloc(1000 *sizeof(char));
+	      printf("Command %d is %s \n",i+1, concatenate(history->buffer[i%10], commandList));
+	    }
+	}
+
+	void redirect (char* file)
+	{
+		// printf("I'm in redirect \n");
+		close(1);
+		open (file, O_WRONLY | O_CREAT, S_IRUSR | S_IWUSR);
 	}
 /*
 	void getArguments (args[])
@@ -187,13 +196,18 @@ int main(void)
 
 		if (outputflag)
         {
-		  fd = dup(1); 
-		  printf("fd: %d\n", fd);
-		  close(1);
-  		  open("temp2.txt", O_WRONLY | O_APPEND);
-  		  printf("Message from B \n");
-        }
-
+    	int i = 0;
+    	printf("Detected outputflag\n");
+		  for (i = 0; i < cnt; i++)
+	      {
+	        if (strcmp(args[i], ">") == 0)
+	        {
+	          redirect(args[i + 1]);
+	          args[i] = NULL;
+	        }
+          }
+    	}
+    	
 	   pid_t pid = fork();
 
 	   if (pid == 0)
