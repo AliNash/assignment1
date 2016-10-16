@@ -10,6 +10,7 @@
 #include <sys/types.h>
 #include <ctype.h>
 #include <assert.h>
+#include <fcntl.h>
 
 #define HISTORY_SIZE 10
 #define ARGS_ARRAY_SIZE 20
@@ -81,19 +82,26 @@ history_t* history;
       printf("Command %d is %s \n",i+1, concatenate(history->buffer[i%10], commandList));
     }
 	}
+/*
+	void getArguments (args[])
+	{
+		while (args[i] != "|")
+	}
+*/
 	//
 // This code is given for illustration purposes. You need not include or follow this
 // strictly. Feel free to writer better or bug free code. This example code block does not
 // worry about deallocating memory. You need to ensure memory is allocated and deallocated
 // properly so that your shell works without leaking memory.
 //
-int getcmd(char *prompt, char *args[], int *background, char* line1)
+int getcmd(char *prompt, char *args[], int *background, int *historyflag, int *outputflag, int *pipingflag, char* line1)
 {
 	 int length, i = 0;
 	 char *token, *loc;
 	 char *line = NULL;
 	 size_t linecap = 0;
 	 printf("%s", prompt);
+	 int flag = 0;
 	 length = getline(&line, &linecap, stdin);
 	 line1 = line;
 	 if (length <= 0) {
@@ -105,14 +113,17 @@ int getcmd(char *prompt, char *args[], int *background, char* line1)
 	   *background = 1;
 	   *loc = ' ';
 	 }
+	 if ((loc = index(line, '!')) != NULL)
+	 {
+	   *historyflag = 1;
+	 }
 	 if ((loc = index(line, '>')) != NULL)
 	 {
-	   printf("%s\n", "> detected" );
-	   //execvp();
+	   *outputflag = 1;
 	 }
 	 if ((loc = index(line, '|')) != NULL)
 	 {
-		   printf("%s\n", "| detected" );
+	   *pipingflag = 1;
 	 }
 	 else
 	 *background = 0;
@@ -127,30 +138,46 @@ int getcmd(char *prompt, char *args[], int *background, char* line1)
 	 return i;
 }
 
-// void printin (history_t* his)
-// {
-//            char* commandList = (char*) malloc(100 *sizeof(char));
-// 		   concatenate(his->buffer[0], 0 ,commandList);
-// 	       printf("%s\n", commandList);
-// }
-
 int main(void)
 {
 	 char *args[20];
+	 
+	 // Defining file descriptors and other variables to implement piping
+	 // int fd[2]; 
+	 // int nbytes; // stores the number of bytes read
+  //    pid_t childpid;
+  //    char string[] = "String from parent to child\n";
+  //    char readbuffer[80];
+
+  //    pipe(fd);
+
+
+	 // Flags to detect the opeartors
 	 int bg;
+	 int hisflag;
+	 int outputflag;
+	 int pipingflag;
+	 int fd;
+
 	 char* wordir;
 	 char* l;
-   int status;
+   	 int status;
 	 history_t* history = (history_t*) malloc(sizeof(history_t));
 	 history->currentcmd = 0;
 	 pid_t pids[1000];
 	 while(1)
 	 {
+	   // reseting the values for the operators
 	   bg = 0;
-	   int cnt = getcmd("\n>> ", args, &bg, l);
+	   hisflag = 0;
+	   outputflag = 0;
+	   pipingflag = 0;
+
+	   int cnt = getcmd("\n>> ", args, &bg, &hisflag, &outputflag, &pipingflag, l);
 	   // add method here that copies commands to history array
 	   args[cnt] = NULL;
 
+	   // Storing commands in history buffer
 	   for (int i = 0; i < cnt; i++)
 	   {
 	     history->buffer[(history->currentcmd%10)][i*2] =  args[i];
@@ -158,23 +185,55 @@ int main(void)
 	   }
 	   history->currentcmd = history->currentcmd + 1;
 
+		if (outputflag)
+        {
+		  fd = dup(1); 
+		  printf("fd: %d\n", fd);
+		  close(1);
+  		  open("temp2.txt", O_WRONLY | O_APPEND);
+  		  printf("Message from B \n");
+        }
 
 	   pid_t pid = fork();
 
-	   if (pid==0)
+	   if (pid == 0)
 	   {
-	     //child
+	   	// child
+	    // close(fd[1]);
+        // nbytes = read(fd[0], readbuffer, sizeof(readbuffer));
+        // printf("Received string at child from parent: %s", readbuffer);
+	   	// close(1);
+	   	// int n = dup(fd);
+	   	printf("Message from A \n");
+		// printf("%d\n", n);
+		//exit(0);
 	     execvp(args[0],args);
 	     exit(1);
 	   }
 	   else
 	   {
+	   	 // parent
+	   	 if (hisflag)
+        {
+       	 printf("history command");
+        }
+        
+        if (pipingflag)
+        {
+       	 // printf("Piping Redirection command \n");
+       	 // close(fd[0]);
+         // write(fd[1], args[0], (strlen(string)+1));
+       // 	 for (int i =0; i < cnt; i++)
+       // 	 {
+    		 // printf("args[%d] = %s\n",i, args[i]);
+       // 	 }
+        }
+
        if (bg)
        {
            printf("\n Background enabled \n\n");
            // add to background list
        }
-
        // the parent process waits until the child finishes
        else
        {
