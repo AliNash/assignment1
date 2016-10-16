@@ -48,6 +48,12 @@ typedef struct
   int currentcmd;
 } history_t;
 
+typedef struct
+{
+  char* buffer[10][20];
+  int currentjob;
+} jobList;
+
 	// Function Declarations:
 	void printCommand (history_t* history);
 	char* concatenate (char* array[], char* commandList);
@@ -57,6 +63,7 @@ typedef struct
 
 
 history_t* history;
+jobList* jobs;
 
 
 	char* concatenate (char* array[], char* com)
@@ -69,20 +76,24 @@ history_t* history;
 			i++;
 		}
     return com;
-
-		// for (int i = 0; i < 4; i++)
-		// {
-		// 	strcat(commandList, array[i]);
-		// }
-
 	}
 
-	void printCommand (history_t* history)
+	void printHistory (history_t* history)
 	{
 	    for (int i = (history->currentcmd - (history->currentcmd%10)); i < history->currentcmd; i++)
 	    {
-	      char* commandList = (char*) malloc(1000 *sizeof(char));
-	      printf("Command %d is %s \n",i+1, concatenate(history->buffer[i%10], commandList));
+	      char* historyList = (char*) malloc(1000 *sizeof(char));
+	      printf("Command %d is %s \n",i+1, concatenate(history->buffer[i%10], historyList));
+	    }
+	}
+
+	void printJobs (jobList* jobs)
+	{
+		printf("Inside printing jobs \n");
+	    for (int i = (jobs->currentjob - (jobs->currentjob%10)); i < jobs->currentjob; i++)
+	    {
+	      char* jobList = (char*) malloc(1000 *sizeof(char));
+	      printf("Command %d is %s \n",i+1, concatenate(jobs->buffer[i%10], jobList));
 	    }
 	}
 
@@ -113,6 +124,16 @@ history_t* history;
 			close(pipefdes[0]); 
 		}
 	}
+
+	// void updateBuffer (struct history_t history, int cnt, char* args)
+	// {
+	// 	for (int i = 0; i < cnt; i++)
+	//    {
+	//      history->buffer[(history->currentcmd%10)][i*2] =  args[i];
+	//      history->buffer[(history->currentcmd%10)][i*2+1] = " ";
+	//    }
+	//    history->currentcmd = history->currentcmd + 1;
+	// }
 
 
 /*
@@ -160,10 +181,10 @@ int getcmd(char *prompt, char *args[], int *bg, int *historyflag, int *outputfla
 	 {
 	   *pipingflag = 1;
 	 }
-	 else
-	 {
-	 	*bg = 0;
-	 }
+	 // else
+	 // {
+	 // 	*bg = 0;
+	 // }
 	 while ((token = strsep(&line, " \t\n")) != NULL) {
 	   for (int j = 0; j < strlen(token); j++)
 	     if (token[j] <= 32)
@@ -202,8 +223,14 @@ int main(void)
 	 char* wordir;
 	 char* l;
    	 int status;
+	 // Initializing the history parameters:
 	 history_t* history = (history_t*) malloc(sizeof(history_t));
 	 history->currentcmd = 0;
+
+	 // Initializing the job parameters:
+	 jobList* jobs = (jobList*) malloc(sizeof(jobList));
+	 jobs->currentjob = 0;
+
 	 pid_t pids[1000];
 	 while(1)
 	 {
@@ -226,6 +253,18 @@ int main(void)
 	     history->buffer[(history->currentcmd%10)][i*2+1] = " ";
 	   }
 	   history->currentcmd = history->currentcmd + 1;
+	   if (bg)
+       {
+       		for (int i = 0; i < cnt; i++)
+			   {
+			     jobs->buffer[(jobs->currentjob%10)][i*2] =  args[i];
+			     jobs->buffer[(jobs->currentjob%10)][i*2+1] = " ";
+			   }
+			   	 jobs->currentjob = jobs->currentjob + 1;
+		    printf("\n Background enabled \n\n");
+
+           // add to background list
+       }
 
 	   // if (outputflag)
     //     {
@@ -244,11 +283,7 @@ int main(void)
 
 	   if (pid == 0)
 	   {
-	   	if (bg)
-	       {
-	           printf("\n Background enabled \n\n");
-	           // add to background list
-	       }
+
 	   	int i = 0;
 	   	if (outputflag)
         {
@@ -317,7 +352,13 @@ int main(void)
 	     if (strcmp(args[0],"history")==0)
 	     {
 	       history->currentcmd = history->currentcmd - 1;
-	       printCommand(history);
+	       printHistory(history);
+	     }
+	     if (strcmp(args[0],"jobs")==0)
+	     {
+	     	printf("Inside jobs comparison \n");
+	       jobs->currentjob = jobs->currentjob;
+	       printJobs(jobs);
 	     }
 	     // parent
 	   }
