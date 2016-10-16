@@ -53,6 +53,7 @@ typedef struct
 	char* concatenate (char* array[], char* commandList);
 	void add_spaces(char *dest, int num_of_spaces);
 	void redirect (char* file);
+	void piping (char* piping_args[]);
 
 
 history_t* history;
@@ -90,7 +91,29 @@ history_t* history;
 		// printf("I'm in redirect \n");
 		close(1);
 		open (file, O_WRONLY | O_CREAT, S_IRUSR | S_IWUSR);
+		printf("file is %s", file);
 	}
+
+	void piping (char* piping_args[])
+	{
+		pid_t ppid; 
+		int pipefdes[2]; //pipe file descriptor
+
+		pipe(pipefdes);
+		printf("%s\n", piping_args[0]);
+
+		if((ppid = fork()) == 0){
+			dup2(pipefdes[0], 0); 
+			close(pipefdes[1]); 
+			execvp(piping_args[0], piping_args);
+		}
+		else{
+			dup2(pipefdes[1], 1);
+			close(pipefdes[0]); 
+		}
+	}
+
+
 /*
 	void getArguments (args[])
 	{
@@ -98,6 +121,7 @@ history_t* history;
 	}
 */
 	//
+
 // This code is given for illustration purposes. You need not include or follow this
 // strictly. Feel free to writer better or bug free code. This example code block does not
 // worry about deallocating memory. You need to ensure memory is allocated and deallocated
@@ -168,6 +192,9 @@ int main(void)
 	 int pipingflag;
 	 int fd;
 
+	 // File Descriptors:
+	 int old_stdout;
+
 	 char* wordir;
 	 char* l;
    	 int status;
@@ -176,6 +203,7 @@ int main(void)
 	 pid_t pids[1000];
 	 while(1)
 	 {
+
 	   // reseting the values for the operators
 	   bg = 0;
 	   hisflag = 0;
@@ -194,33 +222,41 @@ int main(void)
 	   }
 	   history->currentcmd = history->currentcmd + 1;
 
-		if (outputflag)
-        {
-    	int i = 0;
-    	printf("Detected outputflag\n");
-		  for (i = 0; i < cnt; i++)
-	      {
-	        if (strcmp(args[i], ">") == 0)
-	        {
-	          redirect(args[i + 1]);
-	          args[i] = NULL;
-	        }
-          }
-    	}
-    	
+	   // if (outputflag)
+    //     {
+	   //  	int i = 0;
+	   //  	printf("Detected outputflag\n");
+	   //  	old_stdout = dup(1);
+			 //  while (strcmp(args[i], ">") != 0)
+			 //  {
+			 //  	i++;
+			 //  }
+			 //  redirect(args[i+1]);
+			 //  args[i] = NULL;
+    // 	}
+
 	   pid_t pid = fork();
 
 	   if (pid == 0)
 	   {
-	   	// child
-	    // close(fd[1]);
-        // nbytes = read(fd[0], readbuffer, sizeof(readbuffer));
-        // printf("Received string at child from parent: %s", readbuffer);
-	   	// close(1);
-	   	// int n = dup(fd);
-	   	printf("Message from A \n");
-		// printf("%d\n", n);
-		//exit(0);
+	   	int i = 0;
+	   	if (outputflag)
+        {
+	    	printf("Detected outputflag\n");
+	    	old_stdout = dup(1);
+			  while (strcmp(args[i], ">") != 0)
+			  {
+			  	i++;
+			  }
+			  redirect(args[i+1]);
+			  args[i] = NULL;
+    	}
+    	if (pipingflag)
+        {
+        	printf("piping\n");
+       		args[i] = NULL; 
+       		piping(args+i+1); 
+        }
 	     execvp(args[0],args);
 	     exit(1);
 	   }
@@ -232,26 +268,17 @@ int main(void)
        	 printf("history command");
         }
         
-        if (pipingflag)
-        {
-       	 // printf("Piping Redirection command \n");
-       	 // close(fd[0]);
-         // write(fd[1], args[0], (strlen(string)+1));
-       // 	 for (int i =0; i < cnt; i++)
-       // 	 {
-    		 // printf("args[%d] = %s\n",i, args[i]);
-       // 	 }
-        }
+        
 
        if (bg)
        {
-           printf("\n Background enabled \n\n");
+           // printf("\n Background enabled \n\n");
            // add to background list
        }
        // the parent process waits until the child finishes
        else
        {
-           printf("\n Background not enabled \n\n");
+           // printf("\n Background not enabled \n\n");
            waitpid(pid,&status,0);
       }
 	    // if(strcmp("jobs",args[0])==0){
