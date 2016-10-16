@@ -100,7 +100,8 @@ history_t* history;
 		int pipefdes[2]; //pipe file descriptor
 
 		pipe(pipefdes);
-		printf("%s\n", piping_args[0]);
+		printf("inside piping function\n");
+		printf("piping_args[0] is %s\n", piping_args[0]);
 
 		if((ppid = fork()) == 0){
 			dup2(pipefdes[0], 0); 
@@ -253,7 +254,11 @@ int main(void)
     	}
     	if (pipingflag)
         {
-        	printf("piping\n");
+        	while (strcmp(args[i], "|") != 0)
+			  {
+			  	i++;
+			  }
+        	printf("in piping flag\n");
        		args[i] = NULL; 
        		piping(args+i+1); 
         }
