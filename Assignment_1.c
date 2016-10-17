@@ -91,8 +91,6 @@ jobList* jobs;
 		int pipefdes[2]; //pipe file descriptor
 
 		pipe(pipefdes);
-		printf("inside piping function\n");
-		printf("piping_args[0] is %s\n", piping_args[0]);
 
 		if((ppid = fork()) == 0){
 			dup2(pipefdes[0], 0); 
@@ -122,7 +120,6 @@ int getcmd(char *prompt, char *args[], int *bg, int *historyflag, int *outputfla
 	 if ((loc = index(line, '&')) != NULL)
 	 {
 	   *bg = 1;
-	    printf(" Background value is set to 1 \n" );
 	   *loc = ' ';
 	 }
 	 if ((loc = index(line, '!')) != NULL)
@@ -177,7 +174,7 @@ int main(void)
 	 pid_t pids[1000];
 	 while(1)
 	 {
-
+	   waitpid(-1, &status, 0);
 	   // reseting the values for the operators
 	   bg = 0;
 	   hisflag = 0;
@@ -204,15 +201,14 @@ int main(void)
 			     jobs->buffer[(jobs->currentjob%10)][i*2+1] = " ";
 			   }
 			   	 jobs->currentjob = jobs->currentjob + 1;
-		    printf("\n Background enabled \n\n");
-
-           // add to background list
+           		// add to job list
        }
 
 	   pid_t pid = fork();
 
 	   if (pid == 0)
 	   {
+	   	// Child process runs here
 	   	if (hisflag)
 	   	{
 	   		execvp(retrieveCommand (history, atoi(args[0])),args);
@@ -244,25 +240,17 @@ int main(void)
 	   }
 	   else
 	   {
-	   	 // parent
+	   	 // Parent process runs here
 	   	if (bg)
         {
-       	 //printf("history command");
+        	waitpid(pid,&status,0);
         } 
-       // the parent process waits until the child finishes
         else
         {
-           // printf("\n Background not enabled \n\n");
-           waitpid(pid,&status,0);
-        }
 	   	 if (strcmp(args[0],"exit")==0)
 	     {
 	         exit(0);
 	     }
-	     // if (strcmp(args[0],"pwd")==0)
-	     // {
-	     //     printf("%s\n", getcwd(wordir,150));
-	     // }
 	     if (strcmp(args[0],"cd")==0)
 	     {
 	         chdir(args[1]);
@@ -274,11 +262,12 @@ int main(void)
 	     }
 	     if (strcmp(args[0],"jobs")==0)
 	     {
-	     	printf("Inside jobs comparison \n");
+	       printf("Inside jobs comparison \n");
 	       jobs->currentjob = jobs->currentjob;
 	       printJobs(jobs);
 	     }
 	     // parent
 	   }
 	 }
+   }
 }
