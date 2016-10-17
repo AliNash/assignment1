@@ -1,6 +1,7 @@
-/* Ali Alnashashibi
+/*  
+	Done by: Ali Alnashashibi
 	Student ID Number: 260520965
-	*/
+*/
 
 #include <stdio.h>
 #include <unistd.h>
@@ -11,97 +12,15 @@
 #include <ctype.h>
 #include <assert.h>
 #include <fcntl.h>
+#include "functions.h"
 
 #define HISTORY_SIZE 10
 #define ARGS_ARRAY_SIZE 20
 
-typedef struct
-{
-  char* buffer[10][20];
-  int currentcmd;
-} history_t;
-
-typedef struct
-{
-  char* buffer[10][20];
-  int currentjob;
-} jobList;
-
-	// Function Declarations:
-	void printCommand (history_t* history);
-	char* concatenate (char* array[], char* commandList);
-	void add_spaces(char *dest, int num_of_spaces);
-	void redirect (char* file);
-	void piping (char* piping_args[]);
-	char* retrieveCommand (history_t* history, int i);
-
-
-history_t* history;
-jobList* jobs;
-
-
-	char* concatenate (char* array[], char* com)
-	{
-		int i = 0;
-		while (array[i] != NULL && array[i+1]!= NULL)
-		{
-			//printf("Elements of array %s\n", array[i] );
-			strcat(com, array[i]);
-			i++;
-		}
-    return com;
-	}
-
-	char* retrieveCommand (history_t* history, int i)
-	{
-	      char* historyCommand = (char*) malloc(1000 *sizeof(char));
-	      return concatenate(history->buffer[(i-1)%10], historyCommand);
-	}
-
-	void printHistory (history_t* history)
-	{
-	    for (int i = (history->currentcmd - (history->currentcmd%10)); i < history->currentcmd; i++)
-	    {
-	      char* historyList = (char*) malloc(1000 *sizeof(char));
-	      printf("Command %d is %s \n",i+1, concatenate(history->buffer[i%10], historyList));
-	    }
-	}
-
-	void printJobs (jobList* jobs)
-	{
-		printf("Inside printing jobs \n");
-	    for (int i = (jobs->currentjob - (jobs->currentjob%10)); i < jobs->currentjob; i++)
-	    {
-	      char* jobList = (char*) malloc(1000 *sizeof(char));
-	      printf("Command %d is %s \n",i+1, concatenate(jobs->buffer[i%10], jobList));
-	    }
-	}
-
-	void redirect (char* file)
-	{
-		// printf("I'm in redirect \n");
-		close(1);
-		open (file, O_WRONLY | O_CREAT, S_IRUSR | S_IWUSR);
-		printf("file is %s", file);
-	}
-
-	void piping (char* piping_args[])
-	{
-		pid_t ppid; 
-		int pipefdes[2]; //pipe file descriptor
-
-		pipe(pipefdes);
-
-		if((ppid = fork()) == 0){
-			dup2(pipefdes[0], 0); 
-			close(pipefdes[1]); 
-			execvp(piping_args[0], piping_args);
-		}
-		else{
-			dup2(pipefdes[1], 1);
-			close(pipefdes[0]); 
-		}
-	}
+	// Creating instances for history and jobs
+	// to store all the commands
+	history_t* history;
+	jobList* jobs;
 
 int getcmd(char *prompt, char *args[], int *bg, int *historyflag, int *outputflag, int *pipingflag, char* line1)
 {
@@ -152,7 +71,7 @@ int main(void)
 
 	 // Flags to detect the opeartors
 	 int bg;
-	 int hisflag;
+	 int historyflag;
 	 int outputflag;
 	 int pipingflag;
 	 int fd;
@@ -174,17 +93,16 @@ int main(void)
 	 pid_t pids[1000];
 	 while(1)
 	 {
-	   waitpid(-1, &status, 0);
-	   // reseting the values for the operators
+	   // Initializing all flags to zero
 	   bg = 0;
-	   hisflag = 0;
+	   historyflag = 0;
 	   outputflag = 0;
 	   pipingflag = 0;
 
-	   int cnt = getcmd("\n>> ", args, &bg, &hisflag, &outputflag, &pipingflag, l);
-	   // add method here that copies commands to history array
+	   int cnt = getcmd("\n", args, &bg, &historyflag, &outputflag, &pipingflag, l);
+	   
+	   // add this to make sure it's a null-terminated array
 	   args[cnt] = NULL;
-	   printf("%d\n", bg);
 
 	   // Storing commands in history buffer
 	   for (int i = 0; i < cnt; i++)
@@ -197,8 +115,8 @@ int main(void)
        {
        		for (int i = 0; i < cnt; i++)
 			   {
-			     jobs->buffer[(jobs->currentjob%10)][i*2] =  args[i];
-			     jobs->buffer[(jobs->currentjob%10)][i*2+1] = " ";
+			     jobs->buffer[(jobs->currentjob)][i*2] =  args[i];
+			     jobs->buffer[(jobs->currentjob)][i*2+1] = " ";
 			   }
 			   	 jobs->currentjob = jobs->currentjob + 1;
            		// add to job list
@@ -209,14 +127,13 @@ int main(void)
 	   if (pid == 0)
 	   {
 	   	// Child process runs here
-	   	if (hisflag)
+	   	if (historyflag)
 	   	{
 	   		execvp(retrieveCommand (history, atoi(args[0])),args);
 	   	}
 	   	int i = 0;
 	   	if (outputflag)
         {
-	    	printf("Detected outputflag\n");
 	    	old_stdout = dup(1);
 			  while (strcmp(args[i], ">") != 0)
 			  {
@@ -231,7 +148,6 @@ int main(void)
 			  {
 			  	i++;
 			  }
-        	printf("in piping flag\n");
        		args[i] = NULL; 
        		piping(args+i+1); 
         }
@@ -241,8 +157,10 @@ int main(void)
 	   else
 	   {
 	   	 // Parent process runs here
+	     // checking if we need to run it in the background
 	   	if (bg)
         {
+        	printf("%d", bg);
         	waitpid(pid,&status,0);
         } 
         else
@@ -262,7 +180,6 @@ int main(void)
 	     }
 	     if (strcmp(args[0],"jobs")==0)
 	     {
-	       printf("Inside jobs comparison \n");
 	       jobs->currentjob = jobs->currentjob;
 	       printJobs(jobs);
 	     }

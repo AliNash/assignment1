@@ -1,6 +1,0 @@
-Assignment_1
-Assignment_1.c
-helloExec
-helloExec.c
-new.txt
-out.txt
